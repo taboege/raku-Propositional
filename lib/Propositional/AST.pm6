@@ -7,7 +7,21 @@ role Operator[$sym, &impl] does Propositional::Formula {
     has @.operands;
     has $!variables;
 
-#    method Propositional::CNF { … }
+#    method Propositional::CNF {
+#        self.rewrite() # NNF
+#            .rewrite() # CNF
+#        # Convert to CNF object
+#    }
+
+    method squish {
+        @!operands».squish;
+        my @new-operands;
+        for @!operands {
+            @new-operands.push: quietly .?sym eq $!sym ?? |.operands !! $_;
+        }
+        @!operands = @new-operands;
+        self
+    }
 
     method variables {
         # Maintain a cache.
@@ -35,20 +49,25 @@ class Operator::Equiv does Operator["⇔", &bequiv] { }
 # TODO: This is tighter than the infixes.
 multi prefix:<¬> (Formula \φ) is export {
     Operator::Not.new: :operands(φ)
+        andthen .squish
 }
 
-multi infix:<∧> (Formula \φ, Formula \ψ) is assoc<list> is export {
+multi infix:<∧> (Formula \φ, Formula \ψ) is export {
     Operator::And.new: :operands(φ, ψ)
+        andthen .squish
 }
 
-multi infix:<∨> (Formula \φ, Formula \ψ) is assoc<list> is export {
+multi infix:<∨> (Formula \φ, Formula \ψ) is export {
     Operator::Or.new: :operands(φ, ψ)
+        andthen .squish
 }
 
-multi infix:<⇒> (Formula \φ, Formula \ψ) is assoc<list> is export {
-    Operator::Imply.new: :operands(φ, ψ);
+multi infix:<⇒> (Formula \φ, Formula \ψ) is export {
+    Operator::Imply.new: :operands(φ, ψ)
+        andthen .squish
 }
 
-multi infix:<⇔> (Formula \φ, Formula \ψ) is assoc<list> is export {
+multi infix:<⇔> (Formula \φ, Formula \ψ) is export {
     Operator::Equiv.new: :operands(φ, ψ)
+        andthen .squish
 }

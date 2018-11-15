@@ -35,17 +35,17 @@ subtest 'variables' => {
     is-deeply (`:a ∨ ¬(¬`:b ⇒ `:z) ∧ `:b).variables, set(`:a, `:b, `:z), 'a ∨ ¬(¬b ⇒ z) ∧ b';
 }
 
-todo 'Associativity and listiness are completely broken!';
 subtest 'associativity and listiness' => {
     plan 5;
 
     # This is one indicator for the difference between (p ⇒ q) ⇒ r and p ⇒ (q ⇒ r).
+    todo "Right-associativity of ⇒ doesn't work";
     is (`:p ⇒ `:q ⇒ `:r).eval(Set(`:p => False, `:q => False, `:r => False)), True, '⇒ is right-associative';
 
-    is-deeply (`:p ∧ `:q ∧ `:q), Propositional::AST::Operator::And.new\ (:operands(`:p, `:q, `:r)), '∧ is listy';
-    is-deeply (`:p ∨ `:q ∨ `:q), Propositional::AST::Operator::Or.new\  (:operands(`:p, `:q, `:r)), '∨ is listy';
-    is-deeply (`:p ⇒ `:q ⇒ `:q), Propositional::AST::Operator::Imply.new(:operands(`:p, `:q, `:r)), '⇒ is listy';
-    is-deeply (`:p ⇔ `:q ⇔ `:q), Propositional::AST::Operator::Equiv.new(:operands(`:p, `:q, `:r)), '⇔ is listy';
+    is-deeply (`:p ∧ `:q ∧ `:r), Propositional::AST::Operator::And.new\ (:operands(`:p, `:q, `:r)), '∧ is listy';
+    is-deeply (`:p ∨ `:q ∨ `:r), Propositional::AST::Operator::Or.new\  (:operands(`:p, `:q, `:r)), '∨ is listy';
+    is-deeply (`:p ⇒ `:q ⇒ `:r), Propositional::AST::Operator::Imply.new(:operands(`:p, `:q, `:r)), '⇒ is listy';
+    is-deeply (`:p ⇔ `:q ⇔ `:r), Propositional::AST::Operator::Equiv.new(:operands(`:p, `:q, `:r)), '⇔ is listy';
 }
 
 subtest 'eval - primitives' => {
