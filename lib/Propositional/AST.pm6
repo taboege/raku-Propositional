@@ -14,6 +14,7 @@ role Operator[$sym, &impl] does Propositional::Formula {
 #    }
 
     method squish {
+        return self unless &impl.arity == 2;
         @!operands».squish;
         my @new-operands;
         for @!operands {
