@@ -1,13 +1,10 @@
 unit module Propositional;
 
 role Formula is export {
-#    method Propositional::AST { … }
-#    method Propositional::CNF { … }
+    method Str { … }
 
     method variables { … }
-
-    method Str { … }
-    method compile { … }
+    method compile { -> \α { self.eval: α } }
     method eval (Set \α) { … }
 
     method truth-table {
