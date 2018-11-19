@@ -183,3 +183,52 @@ subtest 'truth-table' => {
         nok .contradiction, 'not contradiction';
     }}
 }
+
+subtest 'squish and spread' => {
+    plan 5;
+
+    is Propositional::AST::Operator::And.new(operands => (
+        Propositional::AST::Operator::And.new(operands => (
+            `:p, `:q,
+        )),
+        `:r,
+    )).squish,
+    Propositional::AST::Operator::And.new(operands => (`:p, `:q, `:r)),
+    "squish works on left-associative";
+
+    is Propositional::AST::Operator::Imply.new(operands => (
+        `:p,
+        Propositional::AST::Operator::Imply.new(operands => (
+            `:q, `:r,
+        )),
+    )).squish,
+    Propositional::AST::Operator::Imply.new(operands => (`:p, `:q, `:r)),
+    "squish works on right-associative";
+
+    is Propositional::AST::Operator::And.new(operands => (
+        `:p,
+        Propositional::AST::Operator::And.new(operands => (
+            `:q, `:r,
+        )),
+    )).squish,
+    (`:p ∧ `:q ∧ `:r),
+    "operators squish automatically";
+
+    is (`:p ∧ `:q ∧ `:r).spread,
+    Propositional::AST::Operator::And.new(operands => (
+        Propositional::AST::Operator::And.new(operands => (
+            `:p, `:q,
+        )),
+        `:r,
+    )),
+    "spread works on left-associative";
+
+    is (`:p ⇒ `:q ⇒ `:r).spread,
+    Propositional::AST::Operator::Imply.new(operands => (
+        `:p,
+        Propositional::AST::Operator::Imply.new(operands => (
+            `:q, `:r
+        )),
+    )),
+    "spread works on right-associative";
+}

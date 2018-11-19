@@ -146,13 +146,33 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
     }
 
     method squish {
-        @!operands».squish;
+        @!operands».?squish;
         return self unless &impl.arity == 2;
         my @new-operands;
         for @!operands {
             @new-operands.push: quietly .?sym eq $!sym ?? |.operands !! $_;
         }
         @!operands = @new-operands;
+        self
+    }
+
+    method spread {
+        @!operands».?spread;
+        return self unless &impl.arity == 2;
+        my $assoc = try { &impl.prec<assoc> } // 'left';
+        while (@!operands > 2) {
+            if $assoc eq 'left' {
+                my @operands = @!operands.splice(0, 2);
+                unshift @!operands, self.new(:@operands);
+            }
+            elsif $assoc eq 'right' {
+                my @operands = @!operands.splice(*-2, 2);
+                push @!operands, self.new(:@operands);
+            }
+            else {
+                die "unimplemented associativity $assoc";
+            }
+        }
         self
     }
 
