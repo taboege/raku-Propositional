@@ -1,23 +1,8 @@
 use Test;
+use Test::Propositional;
 
 use Propositional;
 use Propositional::AST;
-
-class Var does Variable {
-    has $.name;
-
-    multi method new (Pair:D $p) {
-        self.new: :name($p.key)
-    }
-
-    method Str  { $!name }
-    method gist { $!name }
-}
-
-multi prefix:<`> (Pair $p) {
-    state %VARS;
-    %VARS{$p.key} //= Var.new($p)
-}
 
 plan 2;
 

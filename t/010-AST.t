@@ -1,28 +1,8 @@
 use Test;
+use Test::Propositional;
 
 use Propositional;
 use Propositional::AST;
-
-# Quick and dirty variable space.
-# We convert the pairs to something else behind the scenes
-# because pairs are special-cased in a bunch of core Perl 6
-# structures, like Set() and generally operators that can
-# take adverbs.
-class Var does Variable {
-    has $.name;
-
-    multi method new (Pair:D $p) {
-        self.new: :name($p.key)
-    }
-
-    method Str  { $!name }
-    method gist { $!name }
-}
-
-multi prefix:<`> (Pair $p) {
-    state %VARS;
-    %VARS{$p.key} //= Var.new($p)
-}
 
 plan 7;
 

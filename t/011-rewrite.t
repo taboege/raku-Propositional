@@ -1,23 +1,8 @@
 use Test;
+use Test::Propositional;
 
 use Propositional;
 use Propositional::AST;
-
-class Var does Propositional::Variable {
-    has $.name;
-
-    multi method new (Pair:D $p) {
-        self.new: :name($p.key)
-    }
-
-    method Str  { $!name }
-    method gist { $!name }
-}
-
-multi prefix:<`> (Pair $p) {
-    state %VARS;
-    %VARS{$p.key} //= Var.new($p)
-}
 
 plan 13;
 
@@ -131,42 +116,6 @@ is (`:x ⇔ `:y ∨ (`:z ∧ `:x)).rewrite(
     ).squish,
     "(∧ (∨ z (¬ x) y) (∨ z (¬ y) x) (∨ x (¬ x) y) (∨ x (¬ y) x))",
     "CNF with all rewrite rules at once";
-
-multi infix:<eqv> (Formula \φ, Formula \ψ) {
-    set(φ.truth-table) eqv set(ψ.truth-table)
-}
-
-# Return a Seq of operator symbol strings, one for each path down the AST.
-multi sub operator-traces (\φ) {
-    multi sub operator-traces (Propositional::Variable \φ,      $so-far is copy) {
-        take $so-far
-    }
-    multi sub operator-traces (Propositional::AST::Operator \φ, $so-far is copy) {
-        $so-far ~= φ.sym;
-        operator-traces $_, $so-far for φ.operands
-    }
-
-    gather operator-traces φ, ''
-}
-
-sub ok-normalform(\φ, \φ-nf, $path-pattern) {
-    subtest (~φ) => {
-        like operator-traces(φ-nf).all, $path-pattern, "correct syntax";
-        ok φ eqv φ-nf, "truth tables match";
-    }
-}
-
-sub ok-NNF (\φ) {
-    ok-normalform φ, φ.NNF, rx/^ <-[¬]>* '¬'? $/
-}
-
-sub ok-CNF (\φ) {
-    ok-normalform φ, φ.CNF, rx/^ '∧'? '∨'? '¬'? $/
-}
-
-sub ok-DNF (\φ) {
-    ok-normalform φ, φ.DNF, rx/^ '∨'? '∧'? '¬'? $/
-}
 
 subtest 'NNF' => {
     plan 12;
