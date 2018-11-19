@@ -183,7 +183,3 @@ subtest 'truth-table' => {
         nok .contradiction, 'not contradiction';
     }}
 }
-
-# 6bec259b: squish would cause chained ¬ to be squished which
-# isn't sensible and didn't match eval's implementation.
-is (¬¬`:p), '(¬ (¬ p))', 'no regression on squish bug for unaries';
