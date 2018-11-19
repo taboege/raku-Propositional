@@ -48,10 +48,10 @@ multi infix:<⇔> (Formula \φ, Formula \ψ) is export {
 role Rewritable {
     method rewrite (*@rules, :ce(:$times)? is copy = Inf) {
         my $cur = self;
-        loop {
+        while $times-- > 0 {
             my $*REWRITTEN = 0;
             $cur .= rewrite-once: $_ for @rules;
-            last if --$times ≤ 0 or not $*REWRITTEN or $cur !~~ Rewritable;
+            last if not $*REWRITTEN or $cur !~~ Rewritable;
         }
         $cur
     }
@@ -135,10 +135,10 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
         self.spread;
         @rules».key».?spread;
         my $cur = self;
-        loop {
+        while $times-- > 0 {
             my $*REWRITTEN = 0;
             $cur .= rewrite-once: $_ for @rules;
-            last if --$times ≤ 0 or not $*REWRITTEN or $cur !~~ Rewritable;
+            last if not $*REWRITTEN or $cur !~~ Rewritable;
         }
         $cur
     }
