@@ -124,6 +124,25 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
 #        )
 #    }
 
+    method rewrite (*@rules, :ce(:$times)? is copy = Inf) {
+        # XXX: The spread is required to ensure consistent matching
+        # with listy operators.
+        #@rules».key».?spread;
+        #self.spread.Rewritable::rewrite(|c);
+        # FIXME: This is a copy of Rewritable.rewrite with the spread
+        # invocations added. When R#2496 is resolved, the above two
+        # lines should be enough instead.
+        self.spread;
+        @rules».key».?spread;
+        my $cur = self;
+        loop {
+            my $*REWRITTEN = 0;
+            $cur .= rewrite-once: $_ for @rules;
+            last if --$times ≤ 0 or not $*REWRITTEN or $cur !~~ Rewritable;
+        }
+        $cur
+    }
+
     method rewrite-once ($rule (:key($pattern), :value(&replacement))) {
         my %*REWRITE-CAPTURES;
         if self !~~ $pattern {
@@ -139,8 +158,6 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
 
     multi method ACCEPTS (Operator:D: Operator:D $lhs) {
         $lhs.sym eqv $!sym and
-        # XXX: Will this lead to trouble with squish?
-        # E.g. ^:p ∧ ^:q will not match `:p ∧ `:q ∧ `:r
         $lhs.operands == @!operands and
         all($lhs.operands Z~~ @!operands)
     }
