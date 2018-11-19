@@ -89,7 +89,7 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
             (¬(^:p ∧ ^:q)) => { ¬$:p ∨ ¬$:q },
             (¬¬^:p)        => {  $:p        },
         )
-#        andthen .squish
+        andthen .squish
     }
 
     method CNF {
@@ -98,8 +98,7 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
         # TODO: Tseitin transformation allows to obtain a CNF formula which
         # is not equivalent but equisatisfiable and with guaranteed polynomial-
         # bounded increase in size.
-        my $x = self.NNF;
-        self.NNF andthen .rewrite(
+        self.NNF.rewrite(
             (^:p ∨ (^:q ∧ ^:r)) => { ($:p ∨ $:q) ∧ ($:p ∨ $:r) },
             ((^:q ∧ ^:r) ∨ ^:p) => { ($:p ∨ $:q) ∧ ($:p ∨ $:r) },
         )
@@ -107,7 +106,7 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
     }
 
     method DNF {
-        self.NNF andthen .rewrite(
+        self.NNF.rewrite(
             (^:p ∧ (^:q ∨ ^:r)) => { ($:p ∧ $:q) ∨ ($:p ∧ $:r) },
             ((^:q ∨ ^:r) ∧ ^:p) => { ($:p ∧ $:q) ∨ ($:p ∧ $:r) },
         )
@@ -147,8 +146,8 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
     }
 
     method squish {
-        return self unless &impl.arity == 2;
         @!operands».squish;
+        return self unless &impl.arity == 2;
         my @new-operands;
         for @!operands {
             @new-operands.push: quietly .?sym eq $!sym ?? |.operands !! $_;

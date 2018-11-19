@@ -24,7 +24,7 @@ plan 2;
 is `:p, `:p, 'variable caching works';
 
 subtest 'rewrite' => {
-    plan 10;
+    plan 9;
 
     is (¬(¬`:p ∧ `:q)).rewrite((^:p ∧ `:q) => { $:p }),
        "(¬ (¬ p))",
@@ -105,13 +105,6 @@ subtest 'rewrite' => {
     is (`:p ∧ `:q ∧ `:r).rewrite((^:p ∧ ^:q) => { $:p ∨ $:q }),
        "(∨ p q r)",
        "rewrite works on listy operators";
-
-    todo 'unclear if desired feature';
-    is (`:p ∧ (`:q ∨ `:z) ∧ `:r).rewrite(
-        (^:p(Propositional::Variable) ∧ ^:q(Propositional::Variable)) => { $:p ∨ $:r }
-       ),
-       "(∧ (∨ p r) (∨ q z))",
-       "rewrite implements commutativity for listy operators";
 
     is (`:x ⇔ `:y ∨ (`:z ∧ `:x)).rewrite(
         (  ^:p ⇔ ^:q)       => { ($:p ⇒  $:q) ∧ ($:q ⇒ $:p) },
