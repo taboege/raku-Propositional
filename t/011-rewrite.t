@@ -19,7 +19,7 @@ multi prefix:<`> (Pair $p) {
     %VARS{$p.key} //= Var.new($p)
 }
 
-plan 10;
+plan 13;
 
 is `:p, `:p, 'variable caching works';
 
@@ -131,3 +131,93 @@ is (`:x ⇔ `:y ∨ (`:z ∧ `:x)).rewrite(
     ).squish,
     "(∧ (∨ z (¬ x) y) (∨ z (¬ y) x) (∨ x (¬ x) y) (∨ x (¬ y) x))",
     "CNF with all rewrite rules at once";
+
+multi infix:<eqv> (Formula \φ, Formula \ψ) {
+    set(φ.truth-table) eqv set(ψ.truth-table)
+}
+
+# Return a Seq of operator symbol strings, one for each path down the AST.
+multi sub operator-traces (\φ) {
+    multi sub operator-traces (Propositional::Variable \φ,      $so-far is copy) {
+        take $so-far
+    }
+    multi sub operator-traces (Propositional::AST::Operator \φ, $so-far is copy) {
+        $so-far ~= φ.sym;
+        operator-traces $_, $so-far for φ.operands
+    }
+
+    gather operator-traces φ, ''
+}
+
+sub ok-normalform(\φ, \φ-nf, $path-pattern) {
+    subtest (~φ) => {
+        like operator-traces(φ-nf).all, $path-pattern, "correct syntax";
+        ok φ eqv φ-nf, "truth tables match";
+    }
+}
+
+sub ok-NNF (\φ) {
+    ok-normalform φ, φ.NNF, rx/^ <-[¬]>* '¬'? $/
+}
+
+sub ok-CNF (\φ) {
+    ok-normalform φ, φ.CNF, rx/^ '∧'? '∨'? '¬'? $/
+}
+
+sub ok-DNF (\φ) {
+    ok-normalform φ, φ.DNF, rx/^ '∨'? '∧'? '¬'? $/
+}
+
+subtest 'NNF' => {
+    plan 12;
+
+    skip 'NNF not implemented for variable';
+    #ok-NNF   `:x;
+    ok-NNF  ¬`:x;
+    ok-NNF   `:x ∧ `:y;
+    ok-NNF ¬(`:x ∧ `:y);
+    ok-NNF   `:x ∨ `:y;
+    ok-NNF ¬(`:x ∨ `:y);
+    ok-NNF   `:x ⇒ `:y;
+    ok-NNF  ¬`:x ⇒ `:y;
+    ok-NNF ¬(`:x ⇒ `:y);
+    ok-NNF   `:x ⇔ `:y;
+    ok-NNF ¬(`:x ⇔ `:y);
+    ok-NNF  `:x ⇔ `:y ∨ (`:z ∧ `:x);
+}
+
+subtest 'CNF' => {
+    plan 12;
+
+    skip 'CNF not implemented for variable';
+    #ok-CNF  `:x;
+    ok-CNF  ¬`:x;
+    ok-CNF   `:x ∧ `:y;
+    ok-CNF ¬(`:x ∧ `:y);
+    ok-CNF   `:x ∨ `:y;
+    ok-CNF ¬(`:x ∨ `:y);
+    ok-CNF   `:x ⇒ `:y;
+    ok-CNF  ¬`:x ⇒ `:y;
+    ok-CNF ¬(`:x ⇒ `:y);
+    ok-CNF   `:x ⇔ `:y;
+    ok-CNF ¬(`:x ⇔ `:y);
+    ok-CNF  `:x ⇔ `:y ∨ (`:z ∧ `:x);
+}
+
+subtest 'DNF' => {
+    plan 12;
+
+    skip 'DNF not implemented for variable';
+    #ok-DNF  `:x;
+    ok-DNF  ¬`:x;
+    ok-DNF   `:x ∧ `:y;
+    ok-DNF ¬(`:x ∧ `:y);
+    ok-DNF   `:x ∨ `:y;
+    ok-DNF ¬(`:x ∨ `:y);
+    ok-DNF   `:x ⇒ `:y;
+    ok-DNF  ¬`:x ⇒ `:y;
+    ok-DNF ¬(`:x ⇒ `:y);
+    ok-DNF   `:x ⇔ `:y;
+    ok-DNF ¬(`:x ⇔ `:y);
+    ok-DNF  `:x ⇔ `:y ∨ (`:z ∧ `:x);
+}
