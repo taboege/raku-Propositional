@@ -3,7 +3,7 @@ use Test;
 use Propositional;
 use Propositional::AST;
 
-class Var does Propositional::AST::Variable {
+class Var does Propositional::Variable {
     has $.name;
 
     multi method new (Pair:D $p) {

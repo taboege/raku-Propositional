@@ -59,23 +59,6 @@ role Rewritable {
     method rewrite-once ($rule (:key($pattern), :value(&replacement))) { … }
 }
 
-# FIXME: A role for AST-specific variable functionality is tempting but
-# it shouldn't exist because the AST type will survive conversions to
-# non-AST representations. Maybe the best solution is to add the variable
-# part into Operator.rewrite-once. It has to examine its operands more
-# closely then, and re-dispatch rewrite-once for Operator operands, and
-# special-case Variable operands.
-role Variable does Propositional::Variable does Rewritable {
-    method rewrite-once ($rule (:key($pattern), :value(&replacement))) {
-        my %*REWRITE-CAPTURES;
-        if self ~~ $pattern {
-            try $*REWRITTEN++;
-            return replacement |%*REWRITE-CAPTURES;
-        }
-        self
-    }
-}
-
 role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
     has $.sym = $sym;
     has @.operands;
@@ -144,9 +127,18 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
     }
 
     method rewrite-once ($rule (:key($pattern), :value(&replacement))) {
+        multi sub rewrite-operand (Variable $v, $rule (:key($pattern), :value(&replacement))) {
+            return $v unless $v ~~ $pattern;
+            try $*REWRITTEN++;
+            replacement |%*REWRITE-CAPTURES
+        }
+        multi sub rewrite-operand (Operator $o, $rule (:key($pattern), :value(&replacement))) {
+            $o.rewrite-once($rule)
+        }
+
         my %*REWRITE-CAPTURES;
         if self !~~ $pattern {
-            my @operands = do .?rewrite-once($rule) // $_ for @!operands;
+            my @operands = do .&rewrite-operand($rule) // $_ for @!operands;
             # Do not create a new Operator unless necessary.
             return all(@operands Z=== @!operands) ??
                 self !!
@@ -212,6 +204,9 @@ class Operator::Not   does Operator["¬", &bnot]   { }
 class Operator::And   does Operator["∧", &band]   { }
 class Operator::Or    does Operator["∨", &bor]    { }
 # FIXME: This has the wrong associativity.
+# Can't use a proper infix operator because of R#2147
+# and associativity with reduction metaop doesn't work
+# on mere functions R#2497.
 class Operator::Imply does Operator["⇒", &bimply] { }
 class Operator::Equiv does Operator["⇔", &bequiv] { }
 
@@ -230,7 +225,6 @@ class RewriteCapture does Propositional::Variable does Rewritable {
 
     multi method ACCEPTS (RewriteCapture:D: $lhs) {
         my $res = $lhs ~~ $!matcher;
-        # TODO: Maybe throw if :exists?
         try %*REWRITE-CAPTURES{$!name} = $lhs if $res;
         $res
     }
