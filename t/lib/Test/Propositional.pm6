@@ -26,7 +26,15 @@ multi prefix:<`> (Pair $p) is export {
 }
 
 multi infix:<eqv> (Formula \φ, Formula \ψ) is export {
-    set(φ.truth-table) eqv set(ψ.truth-table)
+    Set(φ.truth-table) eqv Set(ψ.truth-table)
+}
+
+sub is-eqv (Formula \φ, Formula \ψ, $desc = "{φ} ⇔ {ψ}") is export {
+    subtest $desc => {
+        plan 2;
+        is +φ.variables, +ψ.variables, 'numbers of variables match';
+        cmp-ok φ, 'eqv', ψ, 'truth tables match';
+    }
 }
 
 # Return a Seq of operator symbol strings, one for each path down the AST.
@@ -47,7 +55,7 @@ multi sub operator-traces (\φ) {
 sub ok-normalform(\φ, \φ-nf, $path-pattern) {
     subtest (~φ) => {
         like operator-traces(φ-nf).all, $path-pattern, "correct syntax";
-        ok φ eqv φ-nf, "truth tables match";
+        is-eqv φ, φ-nf;
     }
 }
 
