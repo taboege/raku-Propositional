@@ -16,7 +16,7 @@ role Formula is export {
 
     multi method satisfiable   { so  any self.truth-table».value }
     multi method tautology     { so  all self.truth-table».value }
-    multi method contradiction { so none self.truth-table».value }
+    multi method contradiction { not self.satisfiable            }
 }
 
 role Variable does Formula is export {

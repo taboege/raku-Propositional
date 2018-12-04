@@ -1,4 +1,5 @@
 use Propositional;
+use Propositional::CNF;
 
 unit module Propositional::AST;
 
@@ -96,16 +97,33 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
         andthen .squish
     }
 
-#    method Propositional::CNF {
-#        my $cnf = self.CNF;
-#        new Propositional::CNF: :clauses(
-#            new Propositional::CNF::Clause(
-#                vars => ...
-#                nars => ...
-#            )
-#            for $cnf.operands
-#        )
-#    }
+    method Propositional::CNF {
+        my constant CNF = Propositional::CNF;
+
+        multi make-clauses (Variable $var) {
+            CNF::Clause.new: vars => $var.variables
+        }
+
+        multi make-clauses (Operator::Not $nar) {
+            CNF::Clause.new: nars => $nar.variables
+        }
+
+        multi make-clauses (Operator::Or $clause) {
+            sub merge (*@clauses) {
+                CNF::Clause.new(
+                    :vars([∪] @clauses».vars),
+                    :nars([∪] @clauses».nars),
+                )
+            }
+            merge $clause.operands».&make-clauses
+        }
+
+        multi make-clauses (Operator::And $f) {
+            $f.operands».&make-clauses
+        }
+
+        CNF.new: clauses => [flat self.CNF.&make-clauses]
+    }
 
     method rewrite (*@rules, :ce(:$times)? is copy = Inf) {
         # XXX: The spread is required to ensure consistent matching
