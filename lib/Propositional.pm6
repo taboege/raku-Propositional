@@ -19,7 +19,7 @@ role Formula is export {
     multi method contradiction { not self.satisfiable            }
 }
 
-role Variable does Formula is export {
+role Variable does Formula {
     method Str { … }
 
     method Propositional::AST { self }

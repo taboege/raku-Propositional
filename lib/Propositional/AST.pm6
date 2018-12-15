@@ -100,7 +100,7 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
     method Propositional::CNF {
         my constant CNF = Propositional::CNF;
 
-        multi make-clauses (Variable $var) {
+        multi make-clauses (Propositional::Variable $var) {
             CNF::Clause.new: vars => $var.variables
         }
 
@@ -145,7 +145,7 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
     }
 
     method rewrite-once ($rule (:key($pattern), :value(&replacement))) {
-        multi sub rewrite-operand (Variable $v, $rule (:key($pattern), :value(&replacement))) {
+        multi sub rewrite-operand (Propositional::Variable $v, $rule (:key($pattern), :value(&replacement))) {
             return $v unless $v ~~ $pattern;
             try $*REWRITTEN++;
             replacement |%*REWRITE-CAPTURES
