@@ -6,6 +6,10 @@ use Propositional::AST;
 
 plan 13;
 
+# TODO: rewrite returns spread formulas. We should not rely on
+# string comparison with hardcoded strings in the expectations,
+# but use `φ.spread` for the correct φ.
+
 is `:p, `:p, 'variable caching works';
 
 is (¬(¬`:p ∧ `:q)).rewrite((^:p ∧ `:q) => { $:p }),
@@ -24,7 +28,7 @@ subtest 'matcher' => {
     plan 4;
 
     is (¬¬`:p).rewrite((¬^:p) => { $:p ∧ $:p }),
-    "(∧ (∧ p p) (∧ p p))",
+    "(∧ (∧ (∧ p p) p) p)",
     "default matcher is True";
 
     is (¬¬`:p).rewrite((¬^:p(Propositional::Variable)) => { $:p ∧ $:p }),
