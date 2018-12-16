@@ -67,8 +67,8 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
 
     method NNF {
         self.rewrite(
-            (  ^:p ⇔ ^:q)  => { ($:p ⇒  $:q) ∧ ($:q ⇒ $:p) },
-            (  ^:p ⇒ ^:q)  => { ¬$:p ∨  $:q },
+            (  ^:p ⇔ ^:q ) => { ($:p ⇒  $:q) ∧ ($:q ⇒ $:p) },
+            (  ^:p ⇒ ^:q ) => { ¬$:p ∨  $:q },
             (¬(^:p ∨ ^:q)) => { ¬$:p ∧ ¬$:q },
             (¬(^:p ∧ ^:q)) => { ¬$:p ∨ ¬$:q },
             (¬¬^:p)        => {  $:p        },
@@ -149,6 +149,7 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
             return $v unless $v ~~ $pattern;
             try $*REWRITTEN++;
             replacement |%*REWRITE-CAPTURES
+                andthen .?spread // $_
         }
         multi sub rewrite-operand (Operator $o, $rule (:key($pattern), :value(&replacement))) {
             $o.rewrite-once($rule)
@@ -164,6 +165,7 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
         }
         try $*REWRITTEN++;
         replacement |%*REWRITE-CAPTURES
+            andthen .?spread // $_
     }
 
     multi method ACCEPTS (Operator:D: Operator:D $lhs) {
