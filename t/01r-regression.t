@@ -23,14 +23,12 @@ my \φ = Propositional::AST::Operator::Not.new(operands => (
 is φ.squish, '(¬ (∧ p q r))', 'no regression on unary blocking squish';
 
 # a92ab567: rewrite would sometimes not rewrite enough when pattern
-# matching failed due to non-spread replacements being inserted in
-# previous runs of rewrite-once, resulting in subformulas which do not
-# look like their .spread counterpart (while the patterns are always
-# spread).
+# matching failed due to replacements producing non-spread formulas,
+# which couldn't be matched by the always-spread patterns.
 subtest 'no regression with too few rewrites' => {
-    plan 6;
+    plan 8;
 
-    # Forcing more rewrites (which called spread once at the beginning)
+    # Forcing more rewrites (which calls spread once at the beginning)
     # continued the process, so this showed the bug:
     is ((`:p ∨ `:r) ∧ ((`:p ⇒ `:q) ∧ (`:r ⇒ `:q)) ⇒ `:q).NNF,
        ((`:p ∨ `:r) ∧ ((`:p ⇒ `:q) ∧ (`:r ⇒ `:q)) ⇒ `:q).NNF.NNF;
@@ -43,4 +41,15 @@ subtest 'no regression with too few rewrites' => {
     ok-NNF ((`:p ∨ `:r) ∧ ((`:p ⇒ `:q) ∧ (`:r ⇒ `:q)) ⇒ `:q);
     ok-CNF ((`:p ∨ `:r) ∧ ((`:p ⇒ `:q) ∧ (`:r ⇒ `:q)) ⇒ `:q);
     ok-DNF ((`:p ∨ `:r) ∧ ((`:p ⇒ `:q) ∧ (`:r ⇒ `:q)) ⇒ `:q);
+
+    # f1c1c48c: it was still possible to create non-spread formulas
+    # by replacements.
+    is (¬`:p).rewrite((¬^:p) => { sink $:p; `:p ∧ `:q ∧ `:r }),
+       (`:p ∧ `:q ∧ `:r).spread,
+       'replacement is spread itself';
+
+    is (`:p ∧ `:q ∧ `:r ∧ (`:s ∨ `:t)).rewrite(
+            (^:x(quietly *.?name eq 's') ∨ ^:y(quietly *.?name eq 't')) => { $:x ∧ $:y }
+    ), (`:p ∧ `:q ∧ `:r ∧ `:s ∧ `:t).spread,
+    'rewritten formula is spread';
 }

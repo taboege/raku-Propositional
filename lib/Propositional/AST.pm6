@@ -52,6 +52,13 @@ role Rewritable {
         while $times-- > 0 {
             my $*REWRITTEN = 0;
             $cur .= rewrite-once: $_ for @rules;
+            # TODO: This is an expensive normalization step necessary to
+            # ensure that no replacement created non-spread subformulas,
+            # which could terminate the rewriting prematurely because the
+            # spread patterns don't match anymore; see test 01r#3#8.
+            # TBD: It being here means you can't rely on rewrite-once
+            # to return a spread formula!
+            $cur.?squish.?spread;
             last if not $*REWRITTEN or $cur !~~ Rewritable;
         }
         $cur
@@ -139,6 +146,13 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
         while $times-- > 0 {
             my $*REWRITTEN = 0;
             $cur .= rewrite-once: $_ for @rules;
+            # TODO: This is an expensive normalization step necessary to
+            # ensure that no replacement created non-spread subformulas,
+            # which could terminate the rewriting prematurely because the
+            # spread patterns don't match anymore; see test 01r#3#8.
+            # TBD: It being here means you can't rely on rewrite-once
+            # to return a spread formula!
+            $cur.?squish.?spread;
             last if not $*REWRITTEN or $cur !~~ Rewritable;
         }
         $cur
@@ -149,7 +163,6 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
             return $v unless $v ~~ $pattern;
             try $*REWRITTEN++;
             replacement |%*REWRITE-CAPTURES
-                andthen .?spread // $_
         }
         multi sub rewrite-operand (Operator $o, $rule (:key($pattern), :value(&replacement))) {
             $o.rewrite-once($rule)
@@ -165,7 +178,6 @@ role Operator[$sym, &impl] does Propositional::Formula does Rewritable {
         }
         try $*REWRITTEN++;
         replacement |%*REWRITE-CAPTURES
-            andthen .?spread // $_
     }
 
     multi method ACCEPTS (Operator:D: Operator:D $lhs) {
