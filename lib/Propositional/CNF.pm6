@@ -1,8 +1,9 @@
 use Propositional;
 
-#|« This class provides a dedicated type for CNF formulas. It is represented
-exactly like a squished AST formula after calling its C<CNF> method, but
-unlike an AST, a CNF object is immutable.
+#|« This class provides a dedicated type for CNF formulas.
+
+It is represented exactly like a squished AST formula after calling
+its C<CNF> method, but unlike an AST, a CNF object is immutable.
 »
 unit class Propositional::CNF does Propositional::Formula;
 
@@ -36,35 +37,25 @@ our class Clause {
     }
 }
 
+# We store even tautological clauses because we want to be able to store
+# tautologies. They cannot be converted to DIMACS but their SAT problems
+# can still be answered easily. By not storing tautological clauses, we
+# would conflate the empty formula with every tautology, but they have
+# different properties like the number of satisfying assignments, which
+# depend on information that would be lost if we didn't store these clauses.
 has Clause @.clauses;
 has Set $!variables; # cache
-
-submethod BUILD (:@clauses) {
-    # Tautology testing for a disjunction of literals can be done
-    # syntactically in linear time: it is a tautology if and only if
-    # vars and nars intersect.
-    #
-    # We ignore these clauses upfront because there is no way to
-    # convert them to DIMACS. It also saves space.
-    @!clauses = @clauses.grep: { not .tautology }
-}
 
 method variables {
     $!variables //= [∪] flat @!clauses.map({ .vars, .nars })
 }
 
-# Since we don't store tautology clauses, the only way for the
-# CNF to be a tautology is to not have any clauses. I hope this
-# isn't inconsistent with customary assumption about the empty
-# formula...
-
 method eval (Set \α) {
-    return True unless @!clauses;
     [and] @!clauses».eval: α
 }
 
 multi method tautology {
-    not @!clauses
+    none(@!clauses).tautology
 }
 
 method Str { "(∧ " ~ @!clauses».Str.join(" ") ~ ")" }

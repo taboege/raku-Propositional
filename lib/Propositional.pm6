@@ -1,3 +1,5 @@
+use OO::Monitors;
+
 unit module Propositional;
 
 role Formula is export {
@@ -31,6 +33,52 @@ role Variable does Formula {
 }
 
 sub truth-table (Formula:D \φ) is export { φ.truth-table }
+
+#|« Lookup structure to serialize and deserialize variables.
+
+This structure is required to convert a Formula into C<DIMACS cnf>
+format which is the input accepted by SAT solvers. You can make a
+standalone Variable::Lookup structure for your variables or mix
+this role into your Variable class.
+
+To implement this role correctly, variables must be uniquely
+numbered by integers starting from 1 and form a continuous
+range 1..(# of vars). Only then it can be expected that #SAT
+and AllSAT solvers work on the problem you intended to pose.
+»
+role Variable::Lookup {
+    #| Return a unique integer identifying the variable.
+    multi method get-int (Variable: --> Int)   { self.get-index(self) }
+    multi method get-int (Variable $v --> Int) { … }
+    #| Return a variable object from its integer.
+    multi method get-var (Int $n --> Variable)   { … }
+}
+
+# Needs to be a monitor because we are non-atomically updating a hash
+# which may be shared among threads (many SAT instances being created
+# in an all junction, for example).
+#|« Default implementation of a Variable::Lookup: caches all variables
+it is queried about and returns consistent, unique numbers for each.
+
+This is what you will want to use most of the time, unless your variables
+permit a specialized, more efficient lookup.
+»
+monitor Variable::Cache does Variable::Lookup {
+    has %!to-int;
+    has @!to-var;
+
+    multi method get-int (Variable $v --> Int) {
+        if %!to-int{$v}:exists {
+            return %!to-int{$v};
+        }
+        push @!to-var, $v;
+        %!to-int{$v} = +@!to-var
+    }
+
+    multi method get-var (Int $n --> Variable) {
+        @!to-var[$n - 1]
+    }
+}
 
 # FIXME: https://github.com/rakudo/rakudo/issues/2147
 # TODO: This is tighter than the infixes.
