@@ -49,19 +49,20 @@ sub DIMACSify ($clauses, :$lookup = Propositional::Variable::Cache.new) is expor
     # to take what they get. I think this header is an artifact of the
     # DIMACS cnf format being a competition format.
     my ($num-vars, $num-clauses) = 0 xx *;
-    my @DIMACS = gather for $clauses.grep(not *.tautology) {
+    my @DIMACS = gather for |$clauses {
         my @vars = .vars.keys.map({ +$lookup.get-int($_) });
         my @nars = .nars.keys.map({ -$lookup.get-int($_) });
 
-        take sort(&abs, flat @vars, @nars).join(" ") ~ " 0";
-
         # Behold the max=max operator
         $num-vars max=max (@vars, @nars).flat».abs;
+
+        next if .tautology; # no way to format tautological clauses
+        take sort(&abs, flat @vars, @nars).join(" ") ~ " 0";
         $num-clauses++;
     }
 
     gather {
-        take "p cnf $num-vars { $num-clauses max 1 }";
+        take "p cnf $num-vars $num-clauses";
         take $_ for @DIMACS;
     }
 }
@@ -75,7 +76,7 @@ Sets of variables, representing the satisfying assignments.
 See DIMACSify for details about the C<$lookup> structure.
 »
 sub UNDIMACSify ($assignments, :$lookup!) {
-    gather for $assignments {
+    gather for |$assignments {
         my @vars = 1 «+« .grep(*.so, :k);
         take @vars.map({ $lookup.get-var($_) }).Set;
     }
@@ -93,16 +94,78 @@ multi sub all-sat (Propositional::CNF(Propositional::Formula) \φ, |c) is export
     all-sat φ.clauses, |c
 }
 
+# Tautological clauses cannot be converted to DIMACS. The empty formula
+# (one clause consisting only of the end marker "0") is not interpreted
+# as a tautology by every solver, so we catch this ourselves.
+#
+# Luckily, it is tractable. Since it is assumed that sat, count-sat and
+# all-sat pass extraneous parameters like :now to the SAT module, we have
+# to at least do their basic roles.
+
+package Tautology {
+    # FIXME: Would like to turn these into roles parameterized with the
+    # $num-vars, but then SAT::Solver etc. role detection in the SAT
+    # module breaks. Bug filed: R#2551.
+
+    class Solver does SAT::Solver {
+        has $.num-vars;
+        multi method new (Solver:D: *% ()) { self.new(:$!num-vars) }
+
+        multi method solve (Supply $lines, $witness is rw, *% () --> Promise) {
+            $witness = Array[Bool];
+            my $p = Promise.new;
+            $p.keep(True); # or `so $!num-vars`?
+            $p
+        }
+    }
+
+    class Counter does SAT::Counter {
+        has $.num-vars;
+        multi method new (Counter:D: *% ()) { self.new(:$!num-vars) }
+
+        multi method count (Supply $lines, *% () --> Promise) {
+            my $p = Promise.new;
+            $p.keep(2 ** $!num-vars); # or 0 if $!num-vars == 0?
+            $p
+        }
+    }
+
+    class Enumerator does SAT::Enumerator {
+        has $.num-vars;
+        multi method new (Enumerator:D: *% ()) { self.new(:$!num-vars) }
+
+        multi method enumerate (Supply $lines, *% () --> Supply) {
+            supply {
+                emit $_ for cross [True, False] xx $!num-vars;
+            }
+        }
+    }
+}
+
+# A tautology is identified by its DIMACS problem line having zero clauses.
+# TODO: I would like to avoid the array here, but binding the Seq returned
+# by DIMACSify errors with "iterator already in use".
+
+my regex DIMACS-tautology { :s ^p cnf $<num-vars>=[\d+] 0$ }
+
 multi sub sat ($clauses, |c) is export {
-    sat-solve DIMACSify($clauses), |c
+    my @lines = DIMACSify($clauses);
+    my $*SAT-SOLVER = Tautology::Solver.new(num-vars => +$<num-vars>)
+        if @lines.head ~~ &DIMACS-tautology;
+    sat-solve @lines, |c
 }
 
 multi sub count-sat ($clauses, |c) is export {
-    sat-count DIMACSify($clauses), |c
+    my @lines = DIMACSify($clauses);
+    my $*SAT-COUNTER = Tautology::Counter.new(num-vars => +$<num-vars>)
+        if @lines.head ~~ &DIMACS-tautology;
+    sat-count @lines, |c
 }
 
 multi sub all-sat ($clauses, |c) is export {
     my $lookup = Propositional::Variable::Cache.new;
-    sat-enumerate(DIMACSify($clauses, :$lookup), |c)\
-        .map: &UNDIMACSify.assuming(:$lookup)
+    my @lines = DIMACSify($clauses, :$lookup);
+    my $*SAT-ENUMERATOR = Tautology::Enumerator.new(num-vars => +$<num-vars>)
+        if @lines.head ~~ &DIMACS-tautology;
+    UNDIMACSify(sat-enumerate(@lines, |c), :$lookup)
 }

@@ -44,8 +44,6 @@ subtest 'p ∧ ¬p' => { given `:p ∧ ¬`:p {
         "AllSAT";
 }}
 
-skip "tautologies flunk";
-=begin comment
 subtest 'p ∨ ¬p' => { given `:p ∨ ¬`:p {
     plan 3;
     ok sat($_, :now), "SAT";
@@ -54,7 +52,6 @@ subtest 'p ∨ ¬p' => { given `:p ∨ ¬`:p {
         .truth-table.map({ .key if .value }).Set,
         "AllSAT";
 }}
-=end comment
 
 subtest 'p ⇒ ¬p' => { given `:p ⇒ ¬`:p {
     plan 3;
@@ -74,8 +71,6 @@ subtest 'p ⇔ q' => { given `:p ⇔ `:q {
         "AllSAT";
 }}
 
-skip "tautologies flunk";
-=begin comment
 subtest '(p ∨ r) ∧ ((p ⇒ q) ∧ (r ⇒ q)) ⇒ q' => { given (`:p ∨ `:r) ∧ ((`:p ⇒ `:q) ∧ (`:r ⇒ `:q)) ⇒ `:q {
     plan 3;
     ok sat($_, :now), "SAT";
@@ -84,7 +79,6 @@ subtest '(p ∨ r) ∧ ((p ⇒ q) ∧ (r ⇒ q)) ⇒ q' => { given (`:p ∨ `:r)
         .truth-table.map({ .key if .value }).Set,
         "AllSAT";
 }}
-=end comment
 
 subtest '(p ⇔ r) ∧ (r ⇔ ¬q) ∧ (q ⇔ p)' => { given (`:p ⇔ `:r) ∧ (`:r ⇔ ¬`:q) ∧ (`:q ⇔ `:p) {
     plan 3;
@@ -104,5 +98,5 @@ subtest '(p ∨ r) ∧ ((p ⇒ q) ∨ (r ⇒ q)) ⇒ q - neither' => { given (`:
         "AllSAT";
 }}
 
-# dispatch
-# experiments with shared caches and #SAT.
+# FIXME: This test has flappers. Why?
+# TODO: More tests, including shared caches with #SAT.
