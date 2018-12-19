@@ -1,0 +1,29 @@
+{
+  "name"                   : "Propositional",
+  "version"                : "0.1.0",
+  "perl"                   : "6.c",
+  "authors"                : "Tobias Boege",
+  "description"            : "Propositional calculus",
+  "tags"                   : [ ],
+  "license"                : "Artistic-2.0",
+  "depends"                : [
+    "OO::Monitors",
+    "SAT",
+    "SAT::Solver::MiniSAT",
+    "SAT::Counter::DSHARP",
+    "SAT::Enumerator::Toda"
+  ],
+  "build-depends"          : [ ],
+  "test-depends"           : [
+    "Test::META"
+  ],
+  "resources"              : [ ],
+  "provides"               : {
+    "Propositional"        : "lib/Propositional.pm6",
+    "Propositional::AST"   : "lib/Propositional/AST.pm6",
+    "Propositional::CNF"   : "lib/Propositional/CNF.pm6",
+    "Propositional::SAT"   : "lib/Propositional/SAT.pm6",
+    "Test::Propositional"  : "lib/Test/Propositional.pm6"
+  },
+  "source-url"             : "git://github.com/taboege/p6-Propositional.git"
+}

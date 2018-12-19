@@ -1,6 +1,9 @@
 use Test;
+use Test::META;
 
-plan 4;
+plan 5;
+
+meta-ok;
 
 use-ok 'Propositional';
 use-ok 'Propositional::AST';
