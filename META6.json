@@ -25,5 +25,5 @@
     "Propositional::SAT"   : "lib/Propositional/SAT.pm6",
     "Test::Propositional"  : "lib/Test/Propositional.pm6"
   },
-  "source-url"             : "git://github.com/taboege/p6-Propositional.git"
+  "source-url"             : "git://github.com/taboege/raku-Propositional.git"
 }
